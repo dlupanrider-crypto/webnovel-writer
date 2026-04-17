@@ -1,5 +1,145 @@
 # Webnovel Writer
 
+[![License](https://img.shields.io/badge/License-MIT--0-green.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
+[![OpenClaw](https://img.shields.io/badge/OpenClaw-Skill-orange.svg)](https://openclaw.com)
+
+<a href="https://trendshift.io/repositories/22487" target="_blank"><img src="https://trendshift.io/api/badge/repositories/22487" alt="lingfengQAQ%2Fwebnovel-writer | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+
+## 项目简单介绍
+
+`Webnovel Writer` 是面向 OpenClaw 平台的长篇网文创作 Skill 集合，目标是降低 AI 写作中的"遗忘"和"幻觉"，支持长周期连载创作。包含 8 个 Skills、RAG 检索链路和状态管理。
+
+## Skill 列表
+
+| Skill | 用途 |
+|-------|------|
+| `/webnovel-init` | 初始化小说项目（深度模式，分阶段收集创作信息） |
+| `/webnovel-plan [卷号]` | 生成卷级规划与章节大纲 |
+| `/webnovel-write [章号]` | 执行完整章节创作流程 |
+| `/webnovel-review [范围]` | 多维质量审查 |
+| `/webnovel-query [关键词]` | 查询角色/伏笔/节奏/状态等 |
+| `/webnovel-resume` | 中断后自动恢复 |
+| `/webnovel-dashboard` | 只读可视化面板 |
+| `/webnovel-learn [内容]` | 提取可复用写作模式到项目记忆 |
+
+## 快速开始
+
+### 1) 安装依赖
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2) 初始化小说项目
+
+```bash
+/webnovel-init
+```
+
+### 3) 配置 RAG 环境（必做）
+
+进入初始化后的书项目根目录，创建 `.env`：
+
+```bash
+cp .env.example .env
+```
+
+最小配置示例：
+
+```bash
+EMBED_BASE_URL=https://api-inference.modelscope.cn/v1
+EMBED_MODEL=Qwen/Qwen3-Embedding-8B
+EMBED_API_KEY=your_embed_api_key
+
+RERANK_BASE_URL=https://api.jina.ai/v1
+RERANK_MODEL=jina-reranker-v3
+RERANK_API_KEY=your_rerank_api_key
+```
+
+### 4) 开始使用
+
+```bash
+/webnovel-plan 1
+/webnovel-write 1
+/webnovel-review 1-5
+```
+
+### 5) 启动可视化面板（可选）
+
+```bash
+/webnovel-dashboard
+```
+
+## 目录结构
+
+```
+webnovel-writer/
+├── webnovel-init/          # Skill: 初始化小说项目
+├── webnovel-plan/          # Skill: 生成卷级规划
+├── webnovel-write/         # Skill: 章节创作（含 Context Agent + Data Agent）
+├── webnovel-review/        # Skill: 多维质量审查（含 6 维 Checker）
+├── webnovel-query/         # Skill: 查询项目数据
+├── webnovel-resume/        # Skill: 中断恢复
+├── webnovel-dashboard/     # Skill: 可视化面板
+├── webnovel-learn/         # Skill: 提取写作模式
+├── scripts/                # Python 脚本（状态管理、RAG、索引、CLI）
+├── references/             # 共享参考文件
+├── genres/                 # 题材模板
+├── templates/              # 输出模板
+└── docs/                   # 项目文档
+```
+
+## 核心架构
+
+### 防幻觉三定律
+
+| 定律 | 说明 | 执行方式 |
+|------|------|---------|
+| 大纲即法律 | 遵循大纲，不擅自发挥 | Context Agent 强制加载章节大纲 |
+| 设定即物理 | 遵守设定，不自相矛盾 | Consistency Checker 实时校验 |
+| 发明需识别 | 新实体必须入库管理 | Data Agent 自动提取并消歧 |
+
+### 写作链路
+
+`/webnovel-write` 流程：Step 1 → 2A(上下文) → 2B(风格转译) → 3(审查) → 4(润色) → 5(数据落盘) → 6(产物输出)
+- `--fast`：跳过 2B
+- `--minimal`：仅 3 个基础审查
+
+### 六维并行审查
+
+High-point（爽点密度）、Consistency（设定一致性）、Pacing（Strand 比例）、OOC（人设偏离）、Continuity（叙事连贯性）、Reader-pull（钩子强度/追读力）
+
+## 文档
+
+详细文档在 `docs/` 目录：
+
+- 架构与模块：`docs/architecture.md`
+- 命令详解：`docs/commands.md`
+- RAG 与配置：`docs/rag-and-config.md`
+- 题材模板：`docs/genres.md`
+- 运维与恢复：`docs/operations.md`
+- 文档导航：`docs/README.md`
+
+## 开发
+
+### 运行测试
+
+```bash
+pytest webnovel-writer/scripts/data_modules/tests/
+```
+
+### 预检
+
+```bash
+python -X utf8 "scripts/webnovel.py" --project-root "<PROJECT_ROOT>" preflight
+```
+
+## License
+
+MIT-0 (MIT No Attribution). See [LICENSE](LICENSE) for details.
+# Webnovel Writer
+
 [![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Compatible-purple.svg)](https://claude.ai/claude-code)
