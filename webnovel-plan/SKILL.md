@@ -359,11 +359,60 @@ Chapter format (include 反派层级 for context-agent):
   - 下章 context-agent 会读取 chapter_meta[N].hook（实际实现的钩子），生成"接住上章"指导
   - 钩子类型参考：悬念钩 | 危机钩 | 承诺钩 | 情绪钩 | 选择钩 | 渴望钩
 
-Save after each batch:
+### 独立章节大纲文件（默认）
+
+每章生成独立大纲文件，存放于 `大纲/第{volume_id}卷/` 目录下。
+
+**目录创建**（生成前确保目录存在）：
+```bash
+mkdir -p "$PROJECT_ROOT/大纲/第{volume_id}卷"
+```
+
+**文件命名规则**：
+- 格式：`第{NNNN}章-{标题}-大纲.md`
+- 章节号使用 4 位数字填充（如 `第0001章`、`第0023章`）
+- 标题从章节大纲的标题字段提取，做文件名安全处理（去除特殊字符、空格替换为连字符）
+- 示例：`大纲/第1卷/第0001章-全员飞升-大纲.md`
+
+**单章文件格式**：
+```markdown
+# 第 {NNNN} 章：{标题}
+
+- 目标: {20字以内}
+- 阻力: {20字以内}
+- 代价: {20字以内}
+- 时间锚点: {末世第X天 时段/仙历X年X月X日/具体日期+时段}
+- 章内时间跨度: {如 3小时/半天/1天}
+- 与上章时间差: {如 紧接/6小时/1天/跨夜}
+- 倒计时状态: {事件A D-3 -> D-2 / 无}
+- 爽点: {类型} - {30字以内}
+- Strand: {Quest|Fire|Constellation}
+- 反派层级: {无/小/中/大}
+- 视角/主角: {主角A/主角B/女主/群像}
+- 关键实体: {新增或重要出场}
+- 本章变化: {30字以内，优先可量化变化}
+- 章末未闭合问题: {30字以内}
+- 钩子: {类型} - {30字以内}
+```
+
+**保存单章大纲**：
 ```bash
 @'
-{batch_content}
-'@ | Add-Content -Encoding UTF8 "$PROJECT_ROOT/大纲/第{volume_id}卷-详细大纲.md"
+{chapter_outline_content}
+'@ | Set-Content -Encoding UTF8 "$PROJECT_ROOT/大纲/第{volume_id}卷/第{NNNN}章-{标题}-大纲.md"
+```
+
+**卷级汇总索引**（可选，便于全局浏览）：
+每批生成后，更新卷级汇总文件 `大纲/第{volume_id}卷-详细大纲.md`，包含所有章节链接：
+```markdown
+# 第 {volume_id} 卷：{卷名} - 章节大纲索引
+
+> 章节范围: 第 {start} - {end} 章
+
+## 章节列表
+| 章节 | 标题 | 目标 | Strand | 文件 |
+|------|------|------|--------|------|
+| 第 {NNNN} 章 | {标题} | {目标} | {Strand} | [链接](第{volume_id}卷/第{NNNN}章-{标题}-大纲.md) |
 ```
 
 ## 7) Enrich existing setting files from volume outline
@@ -371,7 +420,7 @@ Save after each batch:
 
 输入来源：
 - `大纲/第{volume_id}卷-节拍表.md`
-- `大纲/第{volume_id}卷-详细大纲.md`
+- `大纲/第{volume_id}卷/` 目录下的独立章节大纲文件（或 `大纲/第{volume_id}卷-详细大纲.md` 汇总索引）
 - 现有设定集文件（世界观/力量体系/主角卡/主角组/女主卡/反派设计）
 
 写回策略（必须）：
@@ -412,7 +461,7 @@ If deviation > 15%, adjust chapter assignments.
 - 反派镜像在反派出场章节中体现
 
 **5. 完整性检查**
-Every chapter must have:
+遍历 `大纲/第{volume_id}卷/` 目录下的独立章节大纲文件，每个文件必须包含：
 - 目标（20 字以内）
 - 阻力（20 字以内）
 - 代价（20 字以内）
@@ -428,6 +477,8 @@ Every chapter must have:
 - 本章变化（30 字以内）
 - 章末未闭合问题（30 字以内）
 - 钩子（类型 + 30 字描述）
+
+文件数量必须与章节范围一致（如第 1-50 章应有 50 个独立文件）。
 
 **6. 时间线一致性检查（新增）**
 - 时间线表文件存在：`大纲/第{volume_id}卷-时间线.md`
@@ -451,7 +502,8 @@ python "${SCRIPTS_DIR}/webnovel.py" --project-root "$PROJECT_ROOT" update-state 
 Final check:
 - 节拍表文件已写入：`大纲/第{volume_id}卷-节拍表.md`
 - 时间线表文件已写入：`大纲/第{volume_id}卷-时间线.md`
-- 章纲文件已写入：`大纲/第{volume_id}卷-详细大纲.md`
+- 独立章节大纲文件已写入：`大纲/第{volume_id}卷/第{NNNN}章-{标题}-大纲.md`（数量与章节范围一致）
+- 卷级汇总索引已更新：`大纲/第{volume_id}卷-详细大纲.md`（可选）
 - 设定集已完成基线补齐与本卷增量补充（原文件内可见）
 - 每章包含：目标/阻力/代价/时间锚点/章内时间跨度/与上章时间差/爽点/Strand/反派层级/视角/关键实体/本章变化/章末未闭合问题/钩子
 - 时间线单调递增，倒计时推进正确
@@ -461,7 +513,9 @@ Final check:
 - 节拍表文件不存在或为空
 - 节拍表中段反转缺失（未按“必填/无（理由）”规则填写）
 - **时间线表文件不存在或为空**
-- 章纲文件不存在或为空
+- 独立章节大纲目录不存在：`大纲/第{volume_id}卷/`
+- 独立章节大纲文件数量与章节范围不一致
+- 任一独立章节大纲文件缺少必填字段
 - 任一章节缺少：目标/阻力/代价/时间锚点/章内时间跨度/与上章时间差/爽点/Strand/反派层级/视角/关键实体/本章变化/章末未闭合问题/钩子
 - **任一章节时间字段（时间锚点/章内时间跨度/与上章时间差）缺失**
 - **时间回跳且未标注为闪回**
@@ -475,8 +529,9 @@ Final check:
 ### Rollback / recovery
 If any hard fail triggers:
 1. Stop and list the failing items.
-2. Re-generate only the failed batch (do not overwrite the whole file).
-3. If the last batch is invalid, remove that batch and rewrite it.
+2. Re-generate only the failed batch (do not overwrite existing files).
+3. If the last batch is invalid, delete the invalid independent chapter files from that batch and rewrite them.
+   - 删除示例：`rm "$PROJECT_ROOT/大纲/第{volume_id}卷/第{NNNN}章-*.md"`（仅删除本批次文件）
 4. Only update state after Final check passes.
 
 Next steps:

@@ -73,6 +73,22 @@ def volume_num_for_chapter_from_state(project_root: Path, chapter_num: int) -> i
 
 
 def _find_split_outline_file(outline_dir: Path, chapter_num: int) -> Path | None:
+    # 优先查找卷子目录下的独立文件：大纲/第{N}卷/第{NNNN}章-{标题}-大纲.md
+    volume_num = volume_num_for_chapter_from_state(outline_dir.parent, chapter_num) or volume_num_for_chapter(chapter_num)
+    volume_subdir = outline_dir / f"第{volume_num}卷"
+    if volume_subdir.exists():
+        patterns = [
+            f"第{chapter_num:04d}章*.md",
+            f"第{chapter_num:03d}章*.md",
+            f"第{chapter_num:02d}章*.md",
+            f"第{chapter_num}章*.md",
+        ]
+        for pattern in patterns:
+            matches = sorted(volume_subdir.glob(pattern))
+            if matches:
+                return matches[0]
+
+    # 回退：在大纲根目录查找旧格式文件
     patterns = [
         f"第{chapter_num}章*.md",
         f"第{chapter_num:02d}章*.md",
